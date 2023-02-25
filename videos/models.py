@@ -1,16 +1,33 @@
 from django.db import models
+from django.db.models.signals import pre_save
 from django.utils import timezone
 from django.utils.text import slugify
+from djangoflix.db.models import PublishStateOptions
+from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
 # Create your models here.
 
+class PublishStateOptions(models.TextChoices):
+    # CONSTANT = DB_VALUE, USER_DISPLAU_VALUE/VERBOSE_NAME
+    PUBLISH = 'PU', 'Publish'
+    DRAFT = 'DR', 'Draft'
+    # UNLISTED = 'UN','Unlisted'
+
+class VideoQuerySet(models.QuerySet):
+    def published(self):
+        now = timezone.now()
+        return self.filter(
+            state = PublishStateOptions.PUBLISH,
+            publish_timestamp__lte=now
+        )
+    
+class VideoManager(models.Manager):
+    def get_queryset(self):
+        return VideoQuerySet(self.model, using=self._db)
+    
+    def published(self):
+        return self.get_queryset().published()
 
 class Video(models.Model):
-    class VideoStateOptions(models.TextChoices):
-        # CONSTANT = DB_VALUE, USER_DISPLAU_VALUE/VERBOSE_NAME
-        PUBLISH = 'PU', 'Publish'
-        DRAFT = 'DR', 'Draft'
-        # UNLISTED = 'UN','Unlisted'
-
     title = models.CharField(
         max_length=225
     )
@@ -35,8 +52,8 @@ class Video(models.Model):
     )
     state = models.CharField(
         max_length=2,
-        choices=VideoStateOptions.choices,
-        default=VideoStateOptions.DRAFT
+        choices=PublishStateOptions.choices,
+        default=PublishStateOptions.DRAFT
     )
     publish_timestamp = models.DateTimeField(
         # means that the publish_timestamp field will not automatically be set to the current date and time when a new instance of this model is created.
@@ -46,24 +63,11 @@ class Video(models.Model):
         blank=True,
         null=True
     )
+    objects = VideoManager()
 
     @property
     def is_published(self):
         return self.active
-
-    # The save method is overridden in this model.
-    def save(self, *args, **kwargs):
-        # If the state attribute of the model instance is set to PUBLISH and the publish_timestamp field does not have a value, the method will set publish_timestamp to the current date
-        if self.state == self.VideoStateOptions.PUBLISH and self.publish_timestamp is None:
-            # print('save ass timestamp for published')
-            self.publish_timestamp = timezone.now()
-        # If the state attribute is set to DRAFT, the publish_timestamp field will be set to None
-        elif self.state == self.VideoStateOptions.DRAFT:
-            self.publish_timestamp = None
-        if self.slug is None:
-            self.slug = slugify(self.title)
-        super().save(*args, **kwargs)
-
 
 class VideoAllProxy(Video):
     class Meta:
@@ -98,3 +102,6 @@ class VideoInactiveProxy(Video):
         proxy = True
         verbose_name = 'Inactive Video'
         verbose_name_plural = 'Inactive Videos'
+
+pre_save.connect(publish_state_pre_save, sender=Video)
+pre_save.connect(slugify_pre_save, sender=Video)
