@@ -4,10 +4,10 @@ from .models import Video, VideoAllProxy, VideoPublishedProxy, VideoUnpublishedP
 
 
 class VideoAllAdmin(admin.ModelAdmin):
-    list_display = ['title', 'video_id', 'id', 'state', 'is_published']
+    list_display = ['title', 'video_id', 'id', 'state', 'is_published', 'get_playlist_ids']
     search_fields = ['title']
     list_filter = ['active', 'state']
-    readonly_fields = ['id', 'is_published', 'publish_timestamp']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp', 'get_playlist_ids']
 
     class Meta:
         model = VideoAllProxy
@@ -22,7 +22,7 @@ class VideoPublishedProxyAdmin(admin.ModelAdmin):
     list_display = ['title', 'video_id']
     search_fields = ['title']
     # list_filter = ['active']
-    readonly_fields = ['id', 'is_published', 'publish_timestamp']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp','get_playlist_ids']
 
     class Meta:
         model = VideoPublishedProxy
@@ -38,7 +38,7 @@ class VideoUnpublishedProxyAdmin(admin.ModelAdmin):
     list_display = ['title', 'video_id']
     search_fields = ['title']
     # list_filter = ['video_id']
-    readonly_fields = ['id', 'is_published', 'publish_timestamp']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp', 'get_playlist_ids']
 
     class Meta:
         model = VideoUnpublishedProxy
@@ -53,7 +53,7 @@ admin.site.register(VideoUnpublishedProxy, VideoUnpublishedProxyAdmin)
 class VideoActiveProxyAdmin(admin.ModelAdmin):
     list_display = ['title', 'video_id', 'state']
     search_fields = ['title']
-    readonly_fields = ['id', 'is_published', 'publish_timestamp']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp', 'get_playlist_ids']
 
     class Meta:
         model = VideoActiveProxy
@@ -68,7 +68,7 @@ admin.site.register(VideoActiveProxy, VideoActiveProxyAdmin)
 class VideoInactiveProxyAdmin(admin.ModelAdmin):
     list_display = ['title', 'video_id', 'state']
     search_fields = ['title']
-    readonly_fields = ['id', 'is_published', 'publish_timestamp']
+    readonly_fields = ['id', 'is_published', 'publish_timestamp', 'get_playlist_ids']
 
     class Meta:
         model = VideoInactiveProxy
