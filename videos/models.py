@@ -75,6 +75,9 @@ class Video(models.Model):
         # (while the foreign key on playlist is a forward relationship)
         # self.<foreigned_object>_set.all()
         return list(self.playlist_featured.all().values_list('id', flat=True))
+    
+    # class Meta:
+    #     ordering
 
 class VideoAllProxy(Video):
     class Meta:
