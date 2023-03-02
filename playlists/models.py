@@ -1,10 +1,13 @@
 from django.db import models
 from videos.models import *
+from categories.models import *
 from django.db.models.signals import pre_save
 from django.utils import timezone
 from django.utils.text import slugify
 from djangoflix.db.models import PublishStateOptions
 from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
+from django.contrib.contenttypes.fields import GenericRelation
+from tags.models import TaggedItem
 # Create your models here.
 
 class PublishStateOptions(models.TextChoices):
@@ -43,6 +46,7 @@ class Playlist(models.Model):
     # this same concepts can be used in treading of comments like a comment can be a parent comment and the sub comments under it are its child comments
     # also again the sub comment can have multiple of its own sub comment which can all be threaded together with this concept
     parent = models.ForeignKey("self",blank =True,  null=True, on_delete=models.SET_NULL)
+    category = models.ForeignKey(Category, blank=True, null=True, related_name='playlists', on_delete=models.SET_NULL)
     order = models.IntegerField(default=1)
     title = models.CharField(
         max_length=225
@@ -89,6 +93,11 @@ class Playlist(models.Model):
         blank=True,
         null=True
     )
+    # for creating a reverse relation of the GenericForeignKey
+    # this too isnt adding anything to the database as a new field 
+    # but just giving us some convienence method to use it for the lookups between datatable
+    tags = GenericRelation(TaggedItem, related_query_name='playlist')
+
     objects = VideoManager()
 
     # with the def str below the season table shows parent playlists title

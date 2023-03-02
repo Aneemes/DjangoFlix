@@ -1,10 +1,10 @@
 from django.contrib import admin
 from .models import Playlist, PlaylistItem, TVShowProxy, TVShowSeasonProxy, MovieProxy
-
+from tags.admin import TaggedItemInline
 # Register your models here.
 
 class MovieProxyAdmin(admin.ModelAdmin):
-    fields = ['title', 'description', 'state', 'video', 'slug']
+    fields = ['title', 'description', 'state', 'video', 'category', 'slug']
     list_display = ['title']
     class Meta:
         model = MovieProxy
@@ -35,8 +35,8 @@ class TVShowSeasonProxyInline(admin.TabularInline):
     fields = ['order', 'title', 'state']
 
 class TVShowProxyAdmin(admin.ModelAdmin):
-    inlines = [TVShowSeasonProxyInline]
-    fields = ['title', 'description', 'state', 'video', 'slug']
+    inlines = [TaggedItemInline, TVShowSeasonProxyInline]
+    fields = ['title', 'description', 'state', 'video','category', 'slug']
     list_display = ['title']
     # the video here is as in a featured video or the trailer that a parent playlist(show) might contain
     class Meta:
