@@ -8,6 +8,8 @@ from djangoflix.db.models import PublishStateOptions
 from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
 from django.contrib.contenttypes.fields import GenericRelation
 from tags.models import TaggedItem
+from ratings.models import Rating
+from django.db.models import Avg, Max, Min
 # Create your models here.
 
 class PublishStateOptions(models.TextChoices):
@@ -97,6 +99,7 @@ class Playlist(models.Model):
     # this too isnt adding anything to the database as a new field 
     # but just giving us some convienence method to use it for the lookups between datatable
     tags = GenericRelation(TaggedItem, related_query_name='playlist')
+    ratings = GenericRelation(Rating, related_query_name='playlist')
 
     objects = VideoManager()
 
@@ -104,6 +107,15 @@ class Playlist(models.Model):
     # instead of as before where it only said Playlist object(<pk>)
     def __str__(self):
         return self.title
+    
+    # doing this aggregation calls every time will be computationally expensive
+    # so making a signal to do it for us and storing it as a rating_avg as FK on playlist
+    # will be applicable
+    def get_rating_avg(self):
+        return Playlist.objects.filter(id=self.id).aggregate(Avg("ratings__value"))
+    
+    def get_rating_spread(self):
+        return Playlist.objects.filter(id=self.id).aggregate(max=Max("ratings__value"), min=Min("ratings__value"))
 
     @property
     def is_published(self):
