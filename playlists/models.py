@@ -30,10 +30,13 @@ class PlaylistQuerySet(models.QuerySet):
     
 class PlaylistManager(models.Manager):
     def get_queryset(self):
-        return VideoQuerySet(self.model, using=self._db)
+        return PlaylistQuerySet(self.model, using=self._db)
     
     def published(self):
         return self.get_queryset().published()
+    
+    def featured_playlists(self):
+        return self.get_queryset().filter(type=Playlist.PlaylistTypeChoices.PLAYLIST)
 
 class Playlist(models.Model):
     class PlaylistTypeChoices(models.TextChoices):
@@ -68,10 +71,10 @@ class Playlist(models.Model):
     )
     video = models.ForeignKey(
         Video,
-        null=True,
-        blank=True,
         on_delete=models.SET_NULL,
-        related_name = "playlist_featured"        
+        related_name = "playlist_featured",
+        null=True,
+        blank=True
     ) #this gives one video per playlist
     videos = models.ManyToManyField(Video, blank=True, related_name="playlist_item", 
                                     through="PlaylistItem")
@@ -101,7 +104,7 @@ class Playlist(models.Model):
     tags = GenericRelation(TaggedItem, related_query_name='playlist')
     ratings = GenericRelation(Rating, related_query_name='playlist')
 
-    objects = VideoManager()
+    objects = PlaylistManager()
 
     # with the def str below the season table shows parent playlists title
     # instead of as before where it only said Playlist object(<pk>)
@@ -117,13 +120,12 @@ class Playlist(models.Model):
     def get_rating_spread(self):
         return Playlist.objects.filter(id=self.id).aggregate(max=Max("ratings__value"), min=Min("ratings__value"))
 
+    def get_short_display(self):
+        return ""
+
     @property
     def is_published(self):
         return self.active
-
-
-pre_save.connect(publish_state_pre_save, sender=Playlist)
-pre_save.connect(slugify_pre_save, sender=Playlist)
 
 class TVShowProxyManager(PlaylistManager):
     def all(self):
@@ -140,6 +142,13 @@ class TVShowProxy(Playlist):
     def save(self, *args, **kwargs):
         self.type = Playlist.PlaylistTypeChoices.SHOW
         super().save(*args,**kwargs)
+
+    @property
+    def seasons(self):
+        return self.playlist_set.published()
+
+    def get_short_display(self):
+        return f"{self.seasons.count()} Seasons"
 
 class TVShowSeasonProxyManager(PlaylistManager):
     def all(self):
@@ -196,3 +205,14 @@ class PlaylistItem(models.Model):
     # qs = PlaylistItem.objects.filter(playlist=my_playlist_obj).order_by('order')
 
 
+pre_save.connect(publish_state_pre_save, sender=Playlist)
+pre_save.connect(slugify_pre_save, sender=Playlist)
+
+pre_save.connect(publish_state_pre_save, sender=TVShowProxy)
+pre_save.connect(slugify_pre_save, sender=TVShowProxy)
+
+pre_save.connect(publish_state_pre_save, sender=TVShowSeasonProxy)
+pre_save.connect(slugify_pre_save, sender=TVShowSeasonProxy)
+
+pre_save.connect(publish_state_pre_save, sender=MovieProxy)
+pre_save.connect(slugify_pre_save, sender=MovieProxy)
