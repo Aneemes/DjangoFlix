@@ -5,7 +5,7 @@ from django.db.models.signals import pre_save
 from django.utils import timezone
 from django.utils.text import slugify
 from djangoflix.db.models import PublishStateOptions
-from djangoflix.db.receivers import publish_state_pre_save, slugify_pre_save
+from djangoflix.db.receivers import publish_state_pre_save, unique_slugify_pre_save
 from django.contrib.contenttypes.fields import GenericRelation
 from tags.models import TaggedItem
 from ratings.models import Rating
@@ -206,13 +206,13 @@ class PlaylistItem(models.Model):
 
 
 pre_save.connect(publish_state_pre_save, sender=Playlist)
-pre_save.connect(slugify_pre_save, sender=Playlist)
+pre_save.connect(unique_slugify_pre_save, sender=Playlist)
 
 pre_save.connect(publish_state_pre_save, sender=TVShowProxy)
-pre_save.connect(slugify_pre_save, sender=TVShowProxy)
+pre_save.connect(unique_slugify_pre_save, sender=TVShowProxy)
 
 pre_save.connect(publish_state_pre_save, sender=TVShowSeasonProxy)
-pre_save.connect(slugify_pre_save, sender=TVShowSeasonProxy)
+pre_save.connect(unique_slugify_pre_save, sender=TVShowSeasonProxy)
 
 pre_save.connect(publish_state_pre_save, sender=MovieProxy)
-pre_save.connect(slugify_pre_save, sender=MovieProxy)
+pre_save.connect(unique_slugify_pre_save, sender=MovieProxy)
